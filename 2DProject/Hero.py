@@ -14,7 +14,7 @@ class Hero:
     RUN_SPEED_MPM = (RUN_SPEED_KMPH * 1000.0 / 60.0)
     RUN_SPEED_MPS = (RUN_SPEED_MPM / 60.0)
     RUN_SPEED_PPS = (RUN_SPEED_MPS * PIXEL_PER_METER)
-    JUMP_SPEED = 5.0
+    JUMP_SPEED = 7.0
     SHOW_MAP_SIZE = 15 #화면에보여지는 크기
     SHOW_MAP_SIZEY = 10
     TIME_PER_ACTION = 0.5
@@ -39,7 +39,9 @@ class Hero:
         self.showSize = 0
         self.gravity = 0
         self.x, self.y = 100, 300
+        self.test = 0
         self.jump = 0
+        self.herojump = False
         self.frame = random.randint(0, 7)
         self.total_frames = 0.0
         self.state = self.RIGHT_RUN
@@ -67,59 +69,136 @@ class Hero:
         return True
 
     def heroMove(self):
-        #print("%d %d",self.x,my_map.x)
-        #if self.tileCollx == False:
+        if self.x > get_canvas_width():
+            my_map.changeMap(2,450*2,450*2)
+            tile_map.changeStage(tile_map.map_02, 72)
+            self.x, self.y = 100, 100
 
+        #왼쪽 오른쪽 움직임(맵)
         if self.Left_Check == True and self.x > 0:
             if my_map.x >= 900 or self.x >= 400:
                 self.x -= self.distance
             elif my_map.x < 900:
                 my_map.x += self.distance
-                for i in range((24)):
+                for i in range((tile_map.mapSizeY)):
                     for j in range((72)):
                         tile_map.x[i][j] += self.distance
 
-        if self.Right_Check == True and self.x < get_canvas_width():
+        if self.Right_Check == True:
             if self.x <= 400 or my_map.x <= 0 : #화면 반이상
                 self.x += self.distance
             elif my_map.x > 0:
                 my_map.x -= self.distance
-                for i in range((24)):
+                for i in range((tile_map.mapSizeY)):
                     for j in range((72)):
                         tile_map.x[i][j] -= self.distance
 
-        if my_map.x < 0: #맨오른
-            tile_map.showSize((-my_map.x+1300) / 25 - Hero.SHOW_MAP_SIZE+2, self.y/25 -Hero.SHOW_MAP_SIZEY, (-my_map.x+1300) / 25 + Hero.SHOW_MAP_SIZE+12, self.y/25 +Hero.SHOW_MAP_SIZEY)
-        elif my_map.x >= 900: #맨왠
-            tile_map.showSize((-my_map.x+1300) / 25 - Hero.SHOW_MAP_SIZE-12, self.y/25 -Hero.SHOW_MAP_SIZEY , (-my_map.x+1300) / 25 + Hero.SHOW_MAP_SIZE-2, self.y/25 +Hero.SHOW_MAP_SIZEY)
-        elif -5 <= my_map.x < 905:
-            tile_map.showSize((-my_map.x+1300) / 25 - Hero.SHOW_MAP_SIZE, self.y/25 -Hero.SHOW_MAP_SIZEY , (-my_map.x+1300) / 25 + Hero.SHOW_MAP_SIZE, self.y/25 +Hero.SHOW_MAP_SIZEY)
-
         #점프
+        if my_map.mapState == 1:
+            if self.Jump_Check:
+                 self.jump = Hero.JUMP_SPEED - self.gravity
+                 self.y += self.jump
+                 self.step = False
+            if self.step == False:
+                 self.y -= self.gravity
+
+        elif my_map.mapState == 2: # 300넘어가면 맵을 움직인다
+            if self.Jump_Check:
+                self.jump = Hero.JUMP_SPEED - self.gravity
+                if 0 <= self.y < 300 or my_map.y > 900: #올라갈때
+                    self.y += self.jump
+                    my_map.y = 900
+                else: # self.y >= 300 and  my_map.y <= 900:
+                    my_map.y -= self.jump
+                    self.y = 300
+                    for i in range((tile_map.mapSizeY)):
+                            for j in range((72)):
+                                tile_map.y[i][j]-= self.jump
+                self.step = False
+            elif self.step == False: # 점프하지않았을때 중력받게
+                if 0 <= self.y < 300 or my_map.y > 900: #올라갈때
+                    self.y -= self.gravity
+                    my_map.y = 900
+                else: # self.y > 300 and  my_map.y <= 900:
+                    my_map.y += self.gravity
+                    self.y = 300
+                    for i in range((tile_map.mapSizeY)):
+                            for j in range((72)):
+                                tile_map.y[i][j]+= self.gravity
+
+
+        print(my_map.mapState,my_map.x, my_map.y)
+        if my_map.mapState == 1:
+            if my_map.x < 0: #맨오른
+                tile_map.showSize((-my_map.x+1300) / 25 - Hero.SHOW_MAP_SIZE+2, self.y/25 -Hero.SHOW_MAP_SIZEY-7, (-my_map.x+1300) / 25 + Hero.SHOW_MAP_SIZE+12, self.y/25 +Hero.SHOW_MAP_SIZEY+15)
+            elif my_map.x >= 900: #맨왠
+                tile_map.showSize((-my_map.x+1300) / 25 - Hero.SHOW_MAP_SIZE-12, self.y/25 -Hero.SHOW_MAP_SIZEY-7, (-my_map.x+1300) / 25 + Hero.SHOW_MAP_SIZE-2, self.y/25 +Hero.SHOW_MAP_SIZEY+15)
+            elif -5 <= my_map.x < 905:
+                tile_map.showSize((-my_map.x+1300) / 25 - Hero.SHOW_MAP_SIZE, self.y/25 -Hero.SHOW_MAP_SIZEY-7, (-my_map.x+1300) / 25 + Hero.SHOW_MAP_SIZE, self.y/25 +Hero.SHOW_MAP_SIZEY+15)
+
+        elif my_map.mapState == 2:
+            if my_map.x < 0: #맨오른
+                tile_map.showSizeX((-my_map.x+1300) / 25 - Hero.SHOW_MAP_SIZE+2, (-my_map.x+1300) / 25 + Hero.SHOW_MAP_SIZE+12)
+            elif my_map.x >= 900: #맨왠
+                tile_map.showSizeX((-my_map.x+1300) / 25 - Hero.SHOW_MAP_SIZE-12, (-my_map.x+1300) / 25 + Hero.SHOW_MAP_SIZE-2)
+            elif -5 <= my_map.x < 905:
+                tile_map.showSizeX((-my_map.x+1300) / 25 - Hero.SHOW_MAP_SIZE, (-my_map.x+1300) / 25 + Hero.SHOW_MAP_SIZE)
+            if my_map.y < 0: #맨위
+                tile_map.showSizeY((-my_map.y+1300) / 25 - Hero.SHOW_MAP_SIZE-2, (-my_map.y+1300) / 25 + Hero.SHOW_MAP_SIZE+12)
+            elif my_map.y >= 900: #맨아래
+                tile_map.showSizeY((-my_map.y+1300) / 25 - Hero.SHOW_MAP_SIZE-12, (-my_map.y+1300) / 25 + Hero.SHOW_MAP_SIZE-2)
+            elif -5 <= my_map.y <= 905:
+                tile_map.showSizeY((-my_map.y+1300) / 25 - Hero.SHOW_MAP_SIZE, (-my_map.y+1300) / 25 + Hero.SHOW_MAP_SIZE)
+
         #print(self.y)
-        if self.Jump_Check:
-            self.jump = Hero.JUMP_SPEED - self.gravity
-            self.y += self.jump
-            self.step = False
-        if self.step == False:
-            self.y -= self.gravity
         #타일충돌 함수
 
-        self.tileColly, self.saveY = tile_map.collheroy(self.x, self.y,self.gravity)
+        self.tileColly, self.saveY, self.saveY2, self.herojump, self.Jump_Check = tile_map.collheroy(self.x, self.y,self.jump,self.gravity, self.herojump , self.Jump_Check)
         self.tileCollx, self.saveX = tile_map.collherox(self.x, self.y, self.distance)
         #    print("충돌")
-
         if self.tileColly == True:
             self.step = True
-            self.y = self.saveY
-            self.Jump_Check = False
+            if my_map.mapState == 1:
+                if self.jump+3 > self.gravity:
+                    self.y += self.saveY
+                else:
+                    self.y += self.saveY2
+            elif my_map.mapState == 2: #충돌보정
+                if self.jump+3 > self.gravity:
+                    if 0 <= self.y < 300 or my_map.y > 900:
+                        self.y += self.saveY
+                    else:
+                        my_map.y -= self.saveY
+                        for i in range((tile_map.mapSizeY)):
+                            for j in range((72)):
+                                tile_map.y[i][j] -= self.saveY
+                else:
+                    if 0 <= self.y < 300 or my_map.y > 900:
+                        self.y += self.saveY2
+                    else:
+                        my_map.y -= self.saveY2
+                        for i in range((tile_map.mapSizeY)):
+                            for j in range((72)):
+                                tile_map.y[i][j] -= self.saveY2
+                self.saveY = 0
+                self.saveY2 = 0
             self.gravity = 0
+            self.jump = 0
         else:
             self.step = False
             self.gravity += (WORLD_GRAVITY/Hero.RUN_SPEED_PPS*2)
 
+
+
         if self.tileCollx == True:
-            self.x = self.saveX
+            if 0 <= self.x < 400 or my_map.x > 900 or my_map.x <= 0:
+                self.x += self.saveX
+            else:
+                my_map.x -= self.saveX
+                for i in range((tile_map.mapSizeY)):
+                    for j in range((72)):
+                        tile_map.x[i][j] -= self.saveX
+            self.saveX = 0
 
     def update(self, frame_time):
         self.distance = Hero.RUN_SPEED_PPS * frame_time

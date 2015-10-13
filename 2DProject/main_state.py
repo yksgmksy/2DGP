@@ -53,8 +53,9 @@ def handle_events(frame_time):
                     hero.Left_Check = True
                 if event.key == SDLK_RIGHT:
                     hero.Right_Check = True
-                if event.key == SDLK_UP and hero.Jump_Check == False:
+                if event.key == SDLK_UP and hero.Jump_Check == False and hero.herojump == True:
                     hero.Jump_Check = True
+                    hero.herojump = False
                     hero.gravity = 0
             elif event.type == SDL_KEYUP:
                 if event.key == SDLK_LEFT:
