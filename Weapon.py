@@ -1,4 +1,5 @@
 __author__ = 'yang'
+import math
 from pico2d import *
 
 class Weapon:
@@ -15,7 +16,7 @@ class Weapon:
 
 class Bullet:
     PIXEL_PER_METER = (10.0 / 0.3)           # 10 pixel 30 cm
-    RUN_SPEED_KMPH = 100.0                    # Km / Hour
+    RUN_SPEED_KMPH = 30.0                    # Km / Hour
     RUN_SPEED_MPM = (RUN_SPEED_KMPH * 1000.0 / 60.0)
     RUN_SPEED_MPS = (RUN_SPEED_MPM / 60.0)
     RUN_SPEED_PPS = (RUN_SPEED_MPS * PIXEL_PER_METER)
@@ -30,11 +31,13 @@ class Bullet:
     LEFT, RIGHT = 0, 1
 
     def handle_left(self):
-        self.x -= self.distance
+        self.x += self.distance * self.ax
+        self.y += self.distance * self.ay
         self.travel_range += self.distance
 
     def handle_right(self):
-        self.x += self.distance
+        self.x += self.distance * self.ax
+        self.y += self.distance * self.ay
         self.travel_range += self.distance
 
     handle_state = {
@@ -42,11 +45,17 @@ class Bullet:
                 RIGHT: handle_right
     }
 
-    def __init__(self,x,y,state):
+    def __init__(self,x,y,mousex,mousey,state):
         self.x = x
         self.y = y
-        self.first_x = x
-        self.first_y = y
+        mousey = 600-mousey
+        self.a =  math.sqrt( pow(mousex -  (self.x), 2) +  pow(mousey -  (self.y), 2) )
+        self.ax = (mousex - self.x) / self.a
+        self.ay = (mousey - self.y) / self.a
+        #self.first_x = x
+        #self.first_y = y
+        self.mousex = mousex
+        self.mousey = mousey
         self.canmove = 300
         self.distance = 0
         self.demage = 1
@@ -72,7 +81,7 @@ class Bullet:
 
     def collide_tile(self):
         if self.tile_map.mapstate == 1:
-            if (int)(self.tile_map.mapChange[(int)((self.y)/25)][(int)((-self.mapx+900+self.x)/25)] / 10) != 1:
+            if (int)(self.tile_map.mapChange[(int)((self.y)/25)][(int)((-self.mapx+900+self.x)/25)] / 10) != 1 or self.y > 500:
                 return True
         elif self.tile_map.mapstate == 2:
             if (int)(self.tile_map.mapChange[(int)((-self.mapy+900+self.y)/25)][(int)((-self.mapx+900+self.x)/25)] / 10) != 1:
